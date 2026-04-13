@@ -1,0 +1,17 @@
+{
+  "name": "betocampoy/champs-filter",
+  "description": "Componente reutilizável de filtros para projetos BetoCampoy, com bridges para Doctrine e Legacy Model.",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "BetoCampoy\\Champs\\Filter\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=8.1"
+  },
+  "suggest": {
+    "doctrine/orm": "Necessário para usar a bridge Doctrine",
+    "symfony/http-foundation": "Necessário para a integração Symfony"
+  }
+}
