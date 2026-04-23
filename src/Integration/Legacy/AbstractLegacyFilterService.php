@@ -73,9 +73,31 @@ abstract class AbstractLegacyFilterService
         );
     }
 
+    public function filterById(int|string $id, array $context = [], array $options = []): object|array|null
+    {
+        $filterFieldName = "champs_filter_field_{$this->getIdFieldName()}";
+        $context[$filterFieldName] = $id;
+
+        $result = $this->handle(
+            $context,
+            array_merge($options, [
+                'paginate' => false,
+                'perPage' => 1,
+                'fetchItems' => true,
+                'page' => 1,
+            ])
+        );
+
+        $items = $result->getItems() ?? [];
+
+        return $items[0] ?? null;
+    }
+
     abstract protected function createBaseQuery(): Model;
 
     abstract protected function getFieldMap(): array;
+
+    abstract protected function getIdFieldName(): string;
 
     protected function hydrateFormState(array $formState): array
     {

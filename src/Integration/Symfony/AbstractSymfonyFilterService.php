@@ -32,6 +32,35 @@ abstract class AbstractSymfonyFilterService
     public function handle(Request $request, array $options = []): array
     {
         $input = $this->extractInput($request);
+
+        return $this->handleInput($input, $request, $options);
+    }
+
+    public function filterById(int|string $id, array $options = []): ?array
+    {
+        $filterFieldName = "champs_filter_field_{$this->getIdFieldName()}";
+
+        $result = $this->handleInput(
+            [$filterFieldName => $id],
+            null,
+            $options
+        );
+
+        /** @var QueryBuilder $qb */
+        $qb = $result['qb'];
+        $qb->setMaxResults(1);
+
+        $items = $qb->getQuery()->getArrayResult();
+
+        return $items[0] ?? null;
+    }
+
+    /**
+     * @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
+    protected function handleInput(array $input, ?Request $request = null, array $options = []): array
+    {
         $payload = $this->parser->parse($input);
 
         $qb = $this->createBaseQueryBuilder();
@@ -50,7 +79,11 @@ abstract class AbstractSymfonyFilterService
 
         $queryString = $this->queryStringBuilder->build($payload);
 
-        $this->applyDefaultOrder($qb, $request, $options);
+        if ($request) {
+            $this->applyDefaultOrder($qb, $request, $options);
+        } else {
+            $this->applyDefaultOrderWithoutRequest($qb, $options);
+        }
 
         return [
             'qb' => $qb,
@@ -63,6 +96,8 @@ abstract class AbstractSymfonyFilterService
     abstract protected function createBaseQueryBuilder(): QueryBuilder;
 
     abstract protected function getFieldMap(): array;
+
+    abstract protected function getIdFieldName(): string;
 
     protected function getScopeHandler(): ?object
     {
@@ -77,7 +112,7 @@ abstract class AbstractSymfonyFilterService
     protected function afterApply(
         QueryBuilder $qb,
         FilterPayload $payload,
-        Request $request,
+        ?Request $request,
         array $options
     ): void {
     }
@@ -101,6 +136,20 @@ abstract class AbstractSymfonyFilterService
         );
     }
 
+    protected function applyDefaultOrderWithoutRequest(QueryBuilder $qb, array $options): void
+    {
+        $order = $this->getDefaultOrder();
+
+        if (!$order) {
+            return;
+        }
+
+        $qb->addOrderBy(
+            $order['field'],
+            $order['direction'] ?? 'ASC'
+        );
+    }
+
     protected function extractInput(Request $request): array
     {
         return array_merge(
@@ -109,4 +158,3 @@ abstract class AbstractSymfonyFilterService
         );
     }
 }
-
